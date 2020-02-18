@@ -12,7 +12,7 @@
 
 ```
 # clone project
-git clone git@github.com:renvieir/fastfeet.git
+git clone git@github.com:renvieir/gobarber.git
 
 # install packages
 yarn install
