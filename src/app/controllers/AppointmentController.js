@@ -1,8 +1,12 @@
 import * as Yup from 'yup';
-import { startOfHour, parseISO, isBefore, addHours } from 'date-fns';
+import { startOfHour, parseISO, isBefore, addHours, format } from 'date-fns';
+import pt from 'date-fns/locale/pt';
+
 import Appointment from '../models/Appointment';
 import User from '../models/User';
 import File from '../models/File';
+
+import Notification from '../schemas/Notification';
 
 const PAGINATION_SIZE = 20;
 const pageOffset = page => (page - 1) * PAGINATION_SIZE;
@@ -49,6 +53,10 @@ class AppointmentController {
 
     const { date, provider_id } = req.body;
 
+    if (provider_id === req.userId) {
+      return res.status(401).json({ error: 'Invalid provider' });
+    }
+
     const provider = await User.findByPk(provider_id);
     if (!provider) {
       return res.status(400).json({ error: 'Invalid provider' });
@@ -91,6 +99,19 @@ class AppointmentController {
       date: hourStart,
       provider_id,
       user_id: req.userId,
+    });
+
+    /**
+     * Notify provider
+     */
+    const user = await User.findByPk(req.userId);
+    const formatedDate = format(hourStart, "'dia' dd 'de' MMMM 'às' H:mm'h'", {
+      locale: pt,
+    });
+
+    await Notification.create({
+      content: `Novo agendamento de ${user.name} para ${formatedDate}`,
+      user: provider_id,
     });
 
     return res.json({ appointment });
